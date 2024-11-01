@@ -20,7 +20,14 @@ export default function TabLayout() {
                     tabBarIcon: ({ color }) => <Ionicons name="home" size={24} color={color} />,
                 }}
             />
-
+            <Tabs.Screen
+                name="order"
+                options={{
+                    title: 'My booking',
+                    headerShown: false,
+                    tabBarIcon: ({ color }) => <Ionicons name="archive-sharp" size={24} color={color} />,
+                }}
+            />
         </Tabs>
     );
 }

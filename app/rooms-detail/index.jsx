@@ -1,34 +1,58 @@
 // app/rooms-detail/index.jsx
-import { View, ScrollView, Text, TouchableOpacity, StyleSheet } from "react-native";
+import { View, ScrollView, Text, TouchableOpacity, StyleSheet, Alert } from "react-native";
 import React, { useEffect, useState } from "react";
-import { useLocalSearchParams, useNavigation } from "expo-router";
+import { useLocalSearchParams, useNavigation, useRouter } from "expo-router";
 import RoomInfo from "../../components/RoomDetail/RoomInfo";
-import RoomLocation from "../../components/RoomDetail/RoomLocation";
 import Colors from "../../constants/Colors";
 import { db } from "../../config/firebase";
-import { doc, getDocs } from "firebase/firestore";
+import { collection, addDoc } from "firebase/firestore";
+import { getAuth } from "firebase/auth";
+import MapView, { Marker } from 'react-native-maps';
 
 export default function RoomDetail() {
     const room = useLocalSearchParams();
+    const roomId = room.id;
+    const [loader, setLoader] = useState(false);
     const navigation = useNavigation();
-    // const [room, setRoom] = useState();
+    const router = useRouter();
+    const user = getAuth().currentUser;
+
+    const latitude = room.coordinates.latitude || 0; // Default to 0 if latitude is undefined
+    const longitude = room.coordinates.longitude || 0; // Default to 0 if longitude is undefined
 
     useEffect(() => {
         navigation.setOptions({
-            headerTransparent: true,
-            headerTitle: "",
+            headerShown: false,
         });
-
-        // const fetchRoomDetails = async () => {
-        //     const docRef = doc(db, "rooms", id);
-        //     const docSnap = await getDocs(docRef);
-        //     if (docSnap.exists()) {
-        //         setRoom(docSnap.data());
-        //     }
-        // };
-
-        // fetchRoomDetails();
     }, [room]);
+
+    const handleBookRoom = async () => {
+        try {
+            setLoader(true);
+            await addDoc(collection(db, 'bookings'), {
+                roomId,
+                userId: user.uid,
+                status: 'Upcoming',
+                requestDate: new Date(),
+                roomName: room.name,
+                location: room.location
+            });
+
+            // Show success message and navigate to Orders page
+            Alert.alert(
+                "Success",
+                "Room booked successfully!",
+                [{ text: "OK", onPress: () => router.replace("/order") }],
+                { cancelable: false }
+            );
+
+        } catch (error) {
+            console.error("Error booking room:", error);
+            Alert.alert("Error", "Failed to book the room. Please try again.");
+        } finally {
+            setLoader(false); // Hide loader
+        }
+    };
 
     if (!room) return <Text>Loading...</Text>;
 
@@ -36,13 +60,33 @@ export default function RoomDetail() {
         <View style={{ flex: 1 }}>
             <ScrollView>
                 <RoomInfo room={room} />
-                <RoomLocation location={room.geoLocation} roomId={room.id} />
+
+                {/* MapView with initial region and Marker */}
+                <MapView
+                    style={styles.map}
+                    initialRegion={{
+                        latitude: latitude,
+                        longitude: longitude,
+                        latitudeDelta: 0.0922,
+                        longitudeDelta: 0.0421,
+                    }}
+                >
+                    <Marker
+                        coordinate={{
+                            latitude: latitude,
+                            longitude: longitude,
+                        }}
+                        title={room.name}
+                        description={room.location}
+                    />
+                </MapView>
+
                 <View style={{ height: 70 }} />
             </ScrollView>
 
             <View style={styles.bottomContainer}>
-                <TouchableOpacity style={styles.bookBtn}>
-                    <Text style={styles.bookBtnText}>Book This Room</Text>
+                <TouchableOpacity style={styles.bookBtn} onPress={handleBookRoom} disabled={loader}>
+                    <Text style={styles.bookBtnText}>{loader ? "Booking..." : "Book This Room"}</Text>
                 </TouchableOpacity>
             </View>
         </View>
@@ -50,6 +94,12 @@ export default function RoomDetail() {
 }
 
 const styles = StyleSheet.create({
+    map: {
+        height: 300,
+        width: '100%',
+        borderRadius: 10,
+        marginVertical: 20,
+    },
     bookBtn: {
         padding: 15,
         backgroundColor: Colors.PRIMARY,

@@ -34,11 +34,7 @@ export default function SignIn() {
                 const userDoc = await getDoc(doc(db, 'users', user.uid));
                 if (userDoc.exists()) {
                     const userData = userDoc.data();
-                    if (userData.isAdmin === 1) {
-                        router.replace('/home'); // Redirect to Dashboard for Admin
-                    } else {
-                        router.replace('/home'); // Redirect to Home for regular users
-                    }
+                    router.replace('/home'); // Redirect to Home for regular users
                 }
             })
             .catch((error) => {

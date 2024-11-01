@@ -19,7 +19,8 @@ export default function RoomCard({ room }) {
             }}>
             <View style={styles.card}>
                 <Image source={{ uri: room.image }} style={styles.image} />
-                <Text style={styles.title}>{room.location}</Text>
+                <Text style={styles.title}>{room.name}</Text>
+                <Text style={styles.location}>{room.location}</Text>
                 <Text>Price: ${room.price} / night</Text>
                 <Text numberOfLines={2} style={styles.description}>{room.description}</Text>
             </View>
@@ -43,6 +44,9 @@ const styles = StyleSheet.create({
         fontSize: 18,
         fontWeight: 'bold',
         marginTop: 5,
+    },
+    location: {
+        fontSize: 18,
     },
     description: {
         fontSize: 14,
